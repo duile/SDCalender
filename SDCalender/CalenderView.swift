@@ -17,9 +17,12 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
     var date:NSDate!
     var weekArray:[String] = []
     
-    //上次选中item的indexPath.row
-    var lastItemIndex:Int?
+    var  saveSmall = 0
     
+    //上次选中item的indexPath.row
+    var lastItemIndex:Int = 0
+    
+    var itemArray = NSMutableArray()
     
    static func createView()-> AnyObject{
     
@@ -36,6 +39,7 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
         collectionView .registerNib(UINib.init(nibName: "CalenderCell", bundle: nil), forCellWithReuseIdentifier: "CalenderCell")
         collectionView.backgroundColor = UIColor.whiteColor()
         collectionView.allowsMultipleSelection = true
+        
         //显示时间
         self.showLabelString(date)
         
@@ -61,8 +65,6 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
     }
     /**
      下一个月
-     
-     - parameter sender: <#sender description#>
      */
     @IBAction func clickNextBtn(sender: AnyObject) {
         
@@ -76,7 +78,6 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
         date = newDate;
         collectionView.reloadData()
     }
-    
     /**
      九宫格的布局,把cell的大小和边距
      */
@@ -115,11 +116,6 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
     }
     /**
      数据加载
-     
-     - parameter collectionView: <#collectionView description#>
-     - parameter indexPath:      <#indexPath description#>
-     
-     - returns: <#return value description#>
      */
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
@@ -144,7 +140,6 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
                     OneI += 1
                 }
             }
-            
             //中间的日历显示
             OneI = 1
             let days = self.currentMonthOfDays(date)
@@ -152,27 +147,15 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
                 allDayArray.append(String(OneI))
                 OneI += 1
             }
-            
-//            //后面的空格
-//            OneI = allDayArray.count
-//            var netMonth = 1;
-//            while OneI < (currentMonthOfDays(date)+currentFirstDay(date) + 1) {
-//                allDayArray.append("")
-//                OneI += 1
-//                netMonth += 1;
-//            }
             //数据加载
             cell.timerLabel.text = allDayArray[indexPath.row]
-            
         }
         if indexPath.section == 1 {
             if indexPath.row%7==0||indexPath.row%7==6 {
                 cell.timerLabel.textColor = UIColor.blueColor()
-                
             }
-
         }
-        
+        cell.backgroundColor = UIColor.clearColor()
         return cell
     }
     
@@ -185,39 +168,107 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
         return true;
     }
     
+    func collectionView(collectionView: UICollectionView, shouldDeselectItemAtIndexPath indexPath: NSIndexPath) -> Bool {
+        
+        return true;
+    }
+    
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        
-        print("11111")
-        
-        if lastItemIndex < indexPath.row {
-           
-            while (indexPath.row - lastItemIndex!) != 0 {
-                
-                let indexpath:NSIndexPath = NSIndexPath.init(forItem: lastItemIndex!, inSection: indexPath.section)
-                
-                let  cell = collectionView.cellForItemAtIndexPath(indexpath) as! CalenderCell
-                cell.backgroundColor = UIColor.cyanColor()
-                lastItemIndex! += 1
+        itemArray.addObject(indexPath.row)
+        if itemArray.count > 1{
+            var Sitem = itemArray[0] as! Int
+            var Mitem = itemArray[0] as! Int
+            for itm in 0..<itemArray.count {
+                if (itemArray[itm] as! Int) < Sitem {
+                    Sitem = itemArray[itm] as! Int
+                }else{
+                    Mitem = itemArray[itm] as! Int
+                }
             }
+            var cnt = itemArray[itemArray.count - 2] as! Int
+            var sum1 = indexPath.row - cnt
+            var isSmall:Bool = false
+            var minSmall:Bool = false
+            if itemArray.count != 2 {
+                if (itemArray.lastObject as! Int) == Sitem {
+                    sum1 = Mitem - Sitem
+                    cnt = Mitem
+                    isSmall = true
+                    minSmall = true
+                }else if (cnt > itemArray.lastObject as! Int ) && (itemArray.lastObject as! Int) >  (itemArray[itemArray.count - 3] as! Int){
+                    isSmall = true
+                }else if (cnt > itemArray.lastObject as! Int ) && (itemArray.lastObject as! Int) < (itemArray[itemArray.count - 3] as! Int){
+                    sum1 = itemArray.lastObject as! Int - (itemArray[itemArray.count - 2] as! Int)
+                    cnt = itemArray[itemArray.count - 2] as! Int
+                    isSmall = true
+                }
+            }
+            var sum = abs(sum1)
+            if isSmall {
+                if minSmall {
+                    while sum >= 0 {
+                        let indexpath:NSIndexPath = NSIndexPath.init(forItem: cnt, inSection: indexPath.section)
+                        let  cell = collectionView.cellForItemAtIndexPath(indexpath) as! CalenderCell
+                        if cnt <= Mitem{
+                            if cnt % 7 == 0||cnt % 7 == 6 {
+                                
+                            }else{
+                                cell.backgroundColor = UIColor.cyanColor()
+                            }
+                        }else{
+                            cell.backgroundColor = UIColor.clearColor()
+                            itemArray.removeObject(cnt)
+                        }
+                        cell.selected = false
+                        sum -= 1
+                        cnt -= 1
+                    }
+                }else{
+                    while sum > 0 {
+                        let indexpath:NSIndexPath = NSIndexPath.init(forItem: cnt, inSection: indexPath.section)
+                        let  cell = collectionView.cellForItemAtIndexPath(indexpath) as! CalenderCell
+                        cell.backgroundColor = UIColor.clearColor()
+                        itemArray.removeObject(cnt)
+                        //cell.selected = false
+                        sum -= 1
+                        cnt -= 1
+                    }
+                }
+            }else{
+                while sum >= 0 {
+                    let indexpath:NSIndexPath = NSIndexPath.init(forItem: cnt, inSection: indexPath.section)
+                    let  cell = collectionView.cellForItemAtIndexPath(indexpath) as! CalenderCell
+                    if cnt % 7 == 0||cnt % 7 == 6 {
+                        
+                    }else{
+                        cell.backgroundColor = UIColor.cyanColor()
+                       // cell.selected = false
+                    }
+                    sum -= 1
+                    if sum1>=0 {
+                        cnt += 1
+                    }else{
+                        cnt -= 1
+                    }
+                }
+            }
+            saveSmall = Sitem
         }else{
             let  cell = collectionView.cellForItemAtIndexPath(indexPath) as! CalenderCell
             cell.backgroundColor = UIColor.cyanColor()
             lastItemIndex = indexPath.row
-        
+           // cell.selected = false
         }
-        
     }
     
     func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
         
-       
+        itemArray.removeObject(indexPath.row)
+        let  cell = collectionView.cellForItemAtIndexPath(indexPath) as! CalenderCell
+        cell.backgroundColor = UIColor.clearColor()
     }
     /**
      时间标签显示
-     
-     - parameter date: <#date description#>
-     
-     - returns: <#return value description#>
      */
     func showLabelString(date:NSDate){
     
@@ -259,9 +310,7 @@ class CalenderView: UIView,UICollectionViewDelegate,UICollectionViewDataSource {
     
         let totalDaysInMonth:NSRange = NSCalendar.currentCalendar().rangeOfUnit(NSCalendarUnit.Day, inUnit: NSCalendarUnit.Month, forDate: date)
         return totalDaysInMonth.length
-        
     }
-    
     /**
      *  本月第一天是星期几
      */
