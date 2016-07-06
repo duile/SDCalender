@@ -35,7 +35,7 @@ class ViewController: UIViewController {
         print(firstWeekDay - 1)
         
         let showView:CalenderView = CalenderView.createView() as! CalenderView
-        showView.frame = CGRectMake(0, 64, self.view.frame.size.width, self.view.frame.size.height/2)
+        showView.frame = CGRectMake(0, 64, self.view.frame.size.width, self.view.frame.size.height/2 + 30)
         self.view.addSubview(showView)
         // Do any additional setup after loading the view, typically from a nib.
     }
